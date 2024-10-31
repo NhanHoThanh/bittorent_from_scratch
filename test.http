@@ -1,0 +1,15 @@
+POST http://localhost:8000/api/announce/
+Content-Type: application/json
+
+{
+    "info_hash": "jdasdhsadhsakhasdsa",
+    "peer_id": "abc123",
+    "ip_address": "11.2.4.5", 
+    "port": 6663,
+    "uploaded": 0,
+    "downloaded": 0,
+    "left": 1224,
+    "event": "started",
+    "compact": true,
+    "trackerid": "1"
+}

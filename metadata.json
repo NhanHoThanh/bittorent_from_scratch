@@ -1,0 +1,17 @@
+{
+    "announce": "http://tracker.example.com/announce",
+    "info": {
+        "piece_length": 524288,
+        "pieces": "abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234",
+        "files": [
+            {
+                "length": 1048576,
+                "path": ["sample_folder", "file1.txt"]
+            },
+            {
+                "length": 524288,
+                "path": ["sample_folder", "file2.txt"]
+            }
+        ]
+    }
+}
