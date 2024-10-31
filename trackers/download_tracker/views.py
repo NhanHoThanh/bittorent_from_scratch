@@ -10,6 +10,7 @@ import os
 import uuid
 from .serializer import PeerSerializer, FileSerializer, PeerFileSerializer
 from django.views.decorators.csrf import csrf_exempt
+
 TRACKERID = os.environ.get('TRACKERID')
 print(f"Tracker ID: {TRACKERID}")
 try:
@@ -27,6 +28,7 @@ except ObjectDoesNotExist:
 
 def query_other_trackers_for_peers(info_hash):
     # Example list of other trackers
+    return None
     other_trackers = [
         "http://tracker1.example.com/getfile",
         "http://tracker2.example.com/getfile"
@@ -36,7 +38,10 @@ def query_other_trackers_for_peers(info_hash):
         response = requests.get(tracker_url, params={'info_hash': info_hash})
         if response.status_code == 200:
             return response.json()
-    return None
+            # response_data = {
+            #     'trackerid': instance_tracker.tracker_id,
+            #     'peers': peer_serializer
+            # }
 
 
 def addFileToTrackerList(request):
@@ -97,12 +102,37 @@ def announce(request):
                         peer_type='seeder'
                     )
 
+            # # IF EVENT IS STARTED AND LEFT IS NOT 0 THEN ADD TO LEECHER
+            # elif event == "started" and left > 0:
+            #     try:
+            #         file = File.objects.get(hash_code=info_hash)
+            #         peerfile, created = PeerFile.objects.update_or_create(
+            #             peer=peer,
+            #             file=File.objects.get(hash_code=info_hash),
+            #             peer_type='leecher'
+            #         )
+            #     except File.DoesNotExist:
+            #         File.objects.create(
+            #             hash_code=info_hash)
+
+            #         peerfile, created = PeerFile.objects.update_or_create(
+            #             peer=peer,
+            #             file=File.objects.get(hash_code=info_hash),
+            #             peer_type='leecher'
+            #         )
+
             # IF FILE THEN RETURN IF NOT THEN SEARCH FILES IN OTHER TRACKERS
             try:
                 file = File.objects.get(hash_code=info_hash)
                 # print("here")
                 # print(file)
                 # return JsonResponse(FileSerializer(file).data)
+                if event == "started" and left > 0 and downloaded > 0:
+                    peerfile, created = PeerFile.objects.update_or_create(
+                        peer=peer,
+                        file=File.objects.get(hash_code=info_hash),
+                        peer_type='leecher'
+                    )
                 peers_ids = PeerFile.objects.filter(file=file).values_list(
                     'peer_id', flat=True)
                 peers_list = Peer.objects.filter(peer_id__in=peers_ids)
@@ -117,10 +147,8 @@ def announce(request):
                 # print(peer_serializer)
                 # return JsonResponse(peer_serializer, status=200, safe=False)
             except File.DoesNotExist:
-                query_response = json.load(
-                    query_other_trackers_for_peers(info_hash))
-
-                if peers_list == None:
+                query_response = query_other_trackers_for_peers(info_hash)
+                if query_response == None:
                     response_data = {
                         'failure reason': 'File not found in any tracker'
                     }

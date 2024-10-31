@@ -77,7 +77,7 @@ WSGI_APPLICATION = 'trackers.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'torrent',  # Replace with your MySQL database name
+        'NAME': 'test_torrent',  # Replace with your MySQL database name
         'USER': 'root',  # Replace with your MySQL user
         'PASSWORD': 'admin',  # Replace with your MySQL password
         'HOST': 'localhost',  # Set to your MySQL host
