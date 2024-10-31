@@ -1,15 +1,34 @@
+
+### event = completed, tạo file trong datbase vì chưa có file nào.
 POST http://localhost:8000/api/announce/
 Content-Type: application/json
 
 {
     "info_hash": "jdasdhsadhsakhasdsa",
-    "peer_id": "abc123",
-    "ip_address": "11.2.4.5", 
+    "peer_id": "asdas",
+    "ip_address": "34.24.5.6", 
     "port": 6663,
     "uploaded": 0,
     "downloaded": 0,
+    "left": 0,
+    "event": "completed",
+    "compact": true,
+    
+}
+
+### sau khi tạo thì có thể nhập đúng info_hash để lấy file
+POST http://localhost:8000/api/announce/
+Content-Type: application/json
+
+{
+    "info_hash": "jdasdhsadhsakhasdsa",
+    "peer_id": "ajsvdasd",
+    "ip_address": "11.333.444.555", 
+    "port": 6663,
+    "uploaded": 0,
+    "downloaded": 1223,
     "left": 1224,
     "event": "started",
     "compact": true,
-    "trackerid": "1"
+    
 }
