@@ -1,6 +1,13 @@
 FROM python:3.12.4-slim
 
+
+
 ENV TRACKERID=1
+ENV DB_NAME=test_torrent
+ENV DB_USER=root
+ENV DB_PASSWORD=admin
+ENV DB_HOST=host.docker.internal
+ENV DB_PORT=3306
 
 WORKDIR /app
 

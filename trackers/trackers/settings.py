@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 
-# load_dotenv()
+load_dotenv()
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -81,11 +81,11 @@ WSGI_APPLICATION = 'trackers.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'torrent',  # Replace with your MySQL database name
-        'USER': 'root',  # Replace with your MySQL user
-        'PASSWORD': 'admin',  # Replace with your MySQL password
-        'HOST': 'localhost',  # Set to your MySQL host
-        'PORT': '3306',  # Default MySQL port
+        'NAME': os.getenv('DB_NAME', 'test_torrent'),
+        'USER': os.getenv('DB_USER', 'root'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'admin'),
+        'HOST': os.getenv('DB_HOST', 'host.docker.internal'),
+        'PORT': os.getenv('DB_PORT', '3306'),
     }
 }
 CACHES = {

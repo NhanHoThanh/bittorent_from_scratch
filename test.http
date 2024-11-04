@@ -22,7 +22,7 @@ Content-Type: application/json
 
 {
     "info_hash": "jdasdhsadhsakhasdsa",
-    "peer_id": "ajsvdasd",
+    "peer_id": "test1",
     "ip_address": "11.333.444.555", 
     "port": 6663,
     "uploaded": 0,

@@ -11,19 +11,20 @@ import uuid
 from .serializer import PeerSerializer, FileSerializer, PeerFileSerializer
 from django.views.decorators.csrf import csrf_exempt
 from .ultis.utils import validate_required_fields
-# TRACKERID = os.environ.get('TRACKERID')
-# print(f"Tracker ID: {TRACKERID}")
-# try:
-#     instance_tracker = Tracker.objects.get(tracker_id=TRACKERID)
-# except ObjectDoesNotExist:
-#     print(f"Tracker with tracker_id {
-#           TRACKERID} does not exist. Creating new tracker...")
-#     instance_tracker = Tracker.objects.create(
-#         tracker_id=TRACKERID,
-#         ip_address="localhost",
-#         port=8000,
-#         status='active',
-#     )
+
+TRACKERID = os.environ.get('TRACKERID')
+print(f"Tracker ID: {TRACKERID}")
+try:
+    instance_tracker = Tracker.objects.get(tracker_id=TRACKERID)
+except ObjectDoesNotExist:
+    print(f"Tracker with tracker_id {
+          TRACKERID} does not exist. Creating new tracker...")
+    instance_tracker = Tracker.objects.create(
+        tracker_id=TRACKERID,
+        ip_address="localhost",
+        port=8000,
+        status='active',
+    )
 
 
 def testAPI(request):
