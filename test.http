@@ -1,6 +1,6 @@
 
 ### event = completed, tạo file trong datbase vì chưa có file nào.
-POST http://localhost:8000/api/announce/
+POST http://localhost:8081/api/announce/
 Content-Type: application/json
 
 {
@@ -17,7 +17,7 @@ Content-Type: application/json
 }
 
 ### sau khi tạo thì có thể nhập đúng info_hash để lấy file
-POST http://localhost:8000/api/announce/
+POST http://localhost:8081/api/announce/
 Content-Type: application/json
 
 {
@@ -29,6 +29,7 @@ Content-Type: application/json
     "downloaded": 1223,
     "left": 1224,
     "event": "started",
-    "compact": true,
-    
+    "compact": "0"
 }
+
+###
