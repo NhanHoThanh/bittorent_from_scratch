@@ -1,17 +1,21 @@
-from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
-from .models import File, Peer, PeerFile, Tracker
-import json
-from datetime import datetime
-from django.core.exceptions import ObjectDoesNotExist
-import requests
-from rest_framework.response import Response
-import os
-import uuid
-from .serializer import PeerSerializer, FileSerializer, PeerFileSerializer
-from django.views.decorators.csrf import csrf_exempt
-from .ultis.utils import validate_required_fields
+from .ultis.utils import authorize_peer, generate_jwt_token
 from django.db import connection
+from .ultis.utils import validate_required_fields
+from django.views.decorators.csrf import csrf_exempt
+from .serializer import PeerSerializer, FileSerializer, PeerFileSerializer
+import uuid
+import os
+from rest_framework.response import Response
+import requests
+from django.core.exceptions import ObjectDoesNotExist
+from datetime import datetime
+import json
+from .models import File, Peer, PeerFile, Tracker
+from django.http import JsonResponse
+from django.shortcuts import render, get_object_or_404
+from django.core.exceptions import PermissionDenied
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 
 TRACKERID = os.environ.get('TRACKERID')
 print(f"Tracker ID: {TRACKERID}")
@@ -43,22 +47,51 @@ def testAPI(request):
                              'dbinfo': db_info}, status=200)
 
 
-def addFileToTrackerList(request):
-    if requests.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            name = data['name']
-            hash_code = data['hash_code']
-            file = File.objects.create(name=name, hash_code=hash_code)
-            return JsonResponse({'message': 'File added successfully'}, status=201)
-        except KeyError:
-            return JsonResponse({'error': 'Invalid request'}, status=400)
+@csrf_exempt
+def signup(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        username = data.get('username')
+        password = data.get('password')
+
+        if not username or not password:
+            return JsonResponse({'failure reason': 'Username and password are required'}, status=400)
+
+        if User.objects.filter(username=username).exists():
+            return JsonResponse({'failure reason': 'Username already exists'}, status=400)
+
+        user = User.objects.create_user(username=username, password=password)
+        token = generate_jwt_token(user)
+        return JsonResponse(token, status=201)
+    else:
+        return JsonResponse({'failure reason': 'Invalid request method'}, status=405)
+
+
+@csrf_exempt
+def login(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        username = data.get('username')
+        password = data.get('password')
+
+        if not username or not password:
+            return JsonResponse({'failure reason': 'Username and password are required'}, status=400)
+
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            token = generate_jwt_token(user)
+            return JsonResponse(token, status=200)
+        else:
+            return JsonResponse({'failure reason': 'Invalid credentials'}, status=401)
+    else:
+        return JsonResponse({'failure reason': 'Invalid request method'}, status=405)
 
 
 @csrf_exempt
 def announce(request):
     if request.method == 'POST':
         try:
+            peer = authorize_peer(request)
 
             data = json.loads(request.body)
 
