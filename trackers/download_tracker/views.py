@@ -17,6 +17,8 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
+ISLOGINREQUIRED = os.environ.get('ISLOGINREQUIRED', 0)
+print(f"Is login required: {ISLOGINREQUIRED}")
 TRACKERID = os.environ.get('TRACKERID')
 print(f"Tracker ID: {TRACKERID}")
 try:
@@ -50,6 +52,9 @@ def testAPI(request):
 @csrf_exempt
 def signup(request):
     if request.method == 'POST':
+        if ISLOGINREQUIRED == 0:
+            return JsonResponse({'failure reason': 'Login is not required'}, status=400)
+
         data = json.loads(request.body)
         username = data.get('username')
         password = data.get('password')
@@ -70,6 +75,10 @@ def signup(request):
 @csrf_exempt
 def login(request):
     if request.method == 'POST':
+
+        if ISLOGINREQUIRED == 0:
+            return JsonResponse({'failure reason': 'Login is not required'}, status=400)
+
         data = json.loads(request.body)
         username = data.get('username')
         password = data.get('password')
@@ -91,12 +100,13 @@ def login(request):
 def announce(request):
     if request.method == 'POST':
         try:
-            peer = authorize_peer(request)
+            if ISLOGINREQUIRED == 1:
+                peer = authorize_peer(request)
 
             data = json.loads(request.body)
 
             print("here1")
-            required_fields = ['info_hash', 'peer_id', 'ip_address',
+            required_fields = ['info_hash', 'peer_id',
                                'port', 'uploaded', 'downloaded', 'left']
             print("here2")
             is_valid, error_message = validate_required_fields(
@@ -107,7 +117,7 @@ def announce(request):
             print("here3")
             info_hash = data.get('info_hash', None)
             peer_id = data.get('peer_id', None)
-            ip_address = data.get('ip_address', None)
+            ip_address = ip_address = request.META.get('REMOTE_ADDR')
             port = data.get('port', None)
             uploaded = data.get('uploaded', None)
             downloaded = data.get('downloaded', None)
@@ -150,11 +160,6 @@ def announce(request):
                     )
                 except Exception as e:
                     return JsonResponse({'failure reason for create file or seeding': str(e)}, status=400)
-
-                # peers_ids = PeerFile.objects.filter(file=file).values_list(
-                #     'peer_id', flat=True)
-                # peers_list = Peer.objects.filter(
-                #     peer_id__in=peers_ids).exclude(peer_id=peer_id)
 
                 peers_list = Peer.objects.filter(
                     peerfile__file=file).exclude(peer_id=peer_id)
@@ -233,7 +238,7 @@ def announce(request):
                     print("here7.5")
                     if query_response == None:
                         response_data = {
-                            'failure reason': 'File not found in any trackers'
+                            'failure reason': 'File not found in this'
                         }
                     else:
                         print("here7.6")
@@ -256,8 +261,9 @@ def announce(request):
 
 @csrf_exempt
 def query_other_trackers_for_peers(info_hash):
+    return None
     other_trackers = [
-        "http://localhost:8081/api/getfile/?"
+
     ]
 
     for tracker_url in other_trackers:
