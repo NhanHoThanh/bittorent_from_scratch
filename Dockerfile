@@ -6,13 +6,21 @@ WORKDIR /app
 
 COPY ./requirements.txt /app/requirements.txt
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN apt-get update
+
+RUN apt-get install -y pkg-config python3-dev default-libmysqlclient-dev build-essential
+
+RUN pip install -r requirements.txt
 
 COPY . /app/
 
 EXPOSE 8081
 
-RUN python manage.py makemigrations trackers
+RUN pwd
+
+WORKDIR /app/trackers
+
+RUN python manage.py makemigrations download_tracker
 
 RUN python manage.py migrate
 

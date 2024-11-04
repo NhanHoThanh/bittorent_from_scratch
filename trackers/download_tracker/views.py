@@ -26,6 +26,11 @@ from .ultis.utils import validate_required_fields
 #     )
 
 
+def testAPI(request):
+    if request.method == 'GET':
+        return JsonResponse({'message': 'API is working'}, status=200)
+
+
 def addFileToTrackerList(request):
     if requests.method == 'POST':
         try:
