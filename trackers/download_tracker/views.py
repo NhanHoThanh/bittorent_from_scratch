@@ -62,16 +62,16 @@ def announce(request):
 
             data = json.loads(request.body)
 
-            # print("here1")
+            print("here1")
             required_fields = ['info_hash', 'peer_id', 'ip_address',
                                'port', 'uploaded', 'downloaded', 'left']
-            # print("here1")
+            print("here2")
             is_valid, error_message = validate_required_fields(
                 data, required_fields)
             if is_valid == False:
-                return JsonResponse({'failure reason': str(error_message)}, status=401)
+                return JsonResponse({'failure reason for validating': str(error_message)}, status=401)
 
-            # print("here1")
+            print("here3")
             info_hash = data.get('info_hash', None)
             peer_id = data.get('peer_id', None)
             ip_address = data.get('ip_address', None)
@@ -82,9 +82,9 @@ def announce(request):
             event = data.get('event', None)
             compact = data.get('compact', 0)
             trackerid = data.get('trackerid', instance_tracker.tracker_id)
-            # print("here1")
+            print("here4")
             try:  # WHATEEVER THE EVENT IS, UPDATE THE PEER
-                # print("here1")
+                print("here5")
                 peer, created = Peer.objects.update_or_create(
                     peer_id=peer_id,
                     defaults={
@@ -98,6 +98,7 @@ def announce(request):
                 return JsonResponse({'error': str(e)}, status=400)
 
             response_data = {}
+            print("here5.5")
             # CREATE FILE OR SEEDING
             if event == "completed" or (left == 0 and downloaded >= 0):
                 print("here6")
@@ -115,7 +116,7 @@ def announce(request):
                         peer_type='seeder'
                     )
                 except Exception as e:
-                    return JsonResponse({'failure reason': str(e)}, status=400)
+                    return JsonResponse({'failure reason for create file or seeding': str(e)}, status=400)
 
                 # peers_ids = PeerFile.objects.filter(file=file).values_list(
                 #     'peer_id', flat=True)
@@ -138,6 +139,7 @@ def announce(request):
 
             # PEER STOPPED
             elif event == "stopped":
+                print("here_stopped")
                 try:
                     # Mark the peer as inactive
                     peer.is_active = False
@@ -166,19 +168,22 @@ def announce(request):
 
             # DOWNLOAD AND LEECH
             else:
+                print("here_leech")
                 try:
+                    print("here5.6")
                     file = File.objects.get(hash_code=info_hash)
 
                     if event == 'started' or (downloaded > 0 and left > 0):
                         try:
+                            print("here6")
                             peerfile, created = PeerFile.objects.update_or_create(
                                 peer=peer,
                                 file=File.objects.get(hash_code=info_hash),
                                 peer_type='leecher'
                             )
                         except Exception as e:
-                            return JsonResponse({'failure reason': str(e)}, status=400)
-
+                            return JsonResponse({'failure reason for download and leech': str(e)}, status=400)
+                    print("here7")
                     peers_list = Peer.objects.filter(
                         peerfile__file=file).exclude(peer_id=peer_id)
 
@@ -190,20 +195,24 @@ def announce(request):
                         'incomplete': PeerFile.objects.filter(file=file, peer_type='leecher').count(),
                         'peers': peers_serialized
                     }
-                except File.DoesNotExist:
+                except Exception as e:
                     query_response = query_other_trackers_for_peers(info_hash)
+                    print("here7.5")
                     if query_response == None:
                         response_data = {
                             'failure reason': 'File not found in any trackers'
                         }
                     else:
+                        print("here7.6")
                         peers_list = query_response['peers']
                         trackerid = query_response['trackerid']
+                        complete = query_response['complete']
+                        incomplete = query_response['incomplete']
                         response_data = {
                             'trackerid': trackerid,
                             'interval': 1800,
-                            'complete': PeerFile.objects.filter(file=file, peer_type='seeder').count(),
-                            'incomplete': PeerFile.objects.filter(file=file, peer_type='leecher').count(),
+                            'complete': complete or 0,
+                            'incomplete': incomplete or 0,
                             'peers': peers_list
                         }
             print("here8")
@@ -245,7 +254,9 @@ def getFile(request):
             peer_serializer = PeerSerializer(peers_list, many=True).data
             response_data = {
                 'trackerid': instance_tracker.tracker_id,
-                'peers': peer_serializer
+                'peers': peer_serializer,
+                'complete': PeerFile.objects.filter(file=file, peer_type='seeder').count(),
+                'incomplete': PeerFile.objects.filter(file=file, peer_type='leecher').count()
             }
             return JsonResponse(response_data, status=200)
         except File.DoesNotExist:
