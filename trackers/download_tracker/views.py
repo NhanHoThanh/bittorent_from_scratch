@@ -11,6 +11,7 @@ import uuid
 from .serializer import PeerSerializer, FileSerializer, PeerFileSerializer
 from django.views.decorators.csrf import csrf_exempt
 from .ultis.utils import validate_required_fields
+from django.db import connection
 
 TRACKERID = os.environ.get('TRACKERID')
 print(f"Tracker ID: {TRACKERID}")
@@ -29,7 +30,17 @@ except ObjectDoesNotExist:
 
 def testAPI(request):
     if request.method == 'GET':
-        return JsonResponse({'message': 'API is working'}, status=200)
+        db_info = {
+            'engine': connection.settings_dict['ENGINE'],
+            'name': connection.settings_dict['NAME'],
+            'user': connection.settings_dict['USER'],
+            'host': connection.settings_dict['HOST'],
+            'port': connection.settings_dict['PORT'],
+        }
+
+        print(f"Database connection info: {db_info}")
+        return JsonResponse({'message': 'API is working',
+                             'dbinfo': db_info}, status=200)
 
 
 def addFileToTrackerList(request):
@@ -202,7 +213,7 @@ def announce(request):
 @csrf_exempt
 def query_other_trackers_for_peers(info_hash):
     other_trackers = [
-        "http://127.0.0.1:8080/getfile"
+        "http://localhost:8081/api/getfile/?"
     ]
 
     for tracker_url in other_trackers:
@@ -220,9 +231,10 @@ def query_other_trackers_for_peers(info_hash):
     return None
 
 
-def getFile(request, info_hash):
+def getFile(request):
     if request.method == 'GET':
         try:
+            info_hash = request.GET.get('info_hash')
             file = File.objects.get(hash_code=info_hash)
             peers_ids = PeerFile.objects.filter(file=file).values_list(
                 'peer_id', flat=True)
