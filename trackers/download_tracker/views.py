@@ -62,16 +62,16 @@ def announce(request):
 
             data = json.loads(request.body)
 
-            print("here1")
+            # print("here1")
             required_fields = ['info_hash', 'peer_id', 'ip_address',
                                'port', 'uploaded', 'downloaded', 'left']
-            print("here1")
+            # print("here1")
             is_valid, error_message = validate_required_fields(
                 data, required_fields)
             if is_valid == False:
                 return JsonResponse({'failure reason': str(error_message)}, status=401)
 
-            print("here1")
+            # print("here1")
             info_hash = data.get('info_hash', None)
             peer_id = data.get('peer_id', None)
             ip_address = data.get('ip_address', None)
@@ -82,9 +82,9 @@ def announce(request):
             event = data.get('event', None)
             compact = data.get('compact', 0)
             trackerid = data.get('trackerid', instance_tracker.tracker_id)
-            print("here1")
+            # print("here1")
             try:  # WHATEEVER THE EVENT IS, UPDATE THE PEER
-                print("here1")
+                # print("here1")
                 peer, created = Peer.objects.update_or_create(
                     peer_id=peer_id,
                     defaults={
@@ -100,6 +100,7 @@ def announce(request):
             response_data = {}
             # CREATE FILE OR SEEDING
             if event == "completed" or (left == 0 and downloaded >= 0):
+                print("here6")
 
                 try:  # AFTER THIS THE FILE IS GUARANTEED TO EXIST
                     file = File.objects.get(hash_code=info_hash)
@@ -133,6 +134,7 @@ def announce(request):
                     'incomplete': PeerFile.objects.filter(file=file, peer_type='leecher').count(),
                     'peers': peers_serialized
                 }
+                print("here7")
 
             # PEER STOPPED
             elif event == "stopped":
@@ -204,8 +206,8 @@ def announce(request):
                             'incomplete': PeerFile.objects.filter(file=file, peer_type='leecher').count(),
                             'peers': peers_list
                         }
-
-                return JsonResponse(response_data, status=200)
+            print("here8")
+            return JsonResponse(response_data, status=200)
         except Exception as e:
             return JsonResponse({'failure reason': str(e)}, status=402)
 
