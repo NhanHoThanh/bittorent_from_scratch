@@ -10,7 +10,7 @@ import os
 import uuid
 from .serializer import PeerSerializer, FileSerializer, PeerFileSerializer
 from django.views.decorators.csrf import csrf_exempt
-
+from .ultis.utils import validate_required_fields
 TRACKERID = os.environ.get('TRACKERID')
 print(f"Tracker ID: {TRACKERID}")
 try:
@@ -24,24 +24,6 @@ except ObjectDoesNotExist:
         port=8000,
         status='active',
     )
-
-
-def query_other_trackers_for_peers(info_hash):
-    # Example list of other trackers
-    return None
-    other_trackers = [
-        "http://tracker1.example.com/getfile",
-        "http://tracker2.example.com/getfile"
-    ]
-
-    for tracker_url in other_trackers:
-        response = requests.get(tracker_url, params={'info_hash': info_hash})
-        if response.status_code == 200:
-            return response.json()
-            # response_data = {
-            #     'trackerid': instance_tracker.tracker_id,
-            #     'peers': peer_serializer
-            # }
 
 
 def addFileToTrackerList(request):
@@ -60,121 +42,182 @@ def addFileToTrackerList(request):
 def announce(request):
     if request.method == 'POST':
         try:
+
             data = json.loads(request.body)
-            info_hash = data['info_hash']
-            peer_id = data['peer_id']
-            ip_address = data['ip_address']
-            port = data['port']
-            uploaded = data['uploaded']
-            downloaded = data['downloaded']
-            left = data['left']
-            event = data['event']
-            # compact = data['compact']
-            # trackerid = data['tracker_id']
 
-            # ADD OR UPADE PEER
-            peer, created = Peer.objects.update_or_create(
-                peer_id=peer_id,
-                defaults={
-                    'ip_address': ip_address,
-                    'port': port,
-                    'last_seen': datetime.now(),
-                    'is_active': event != 'stopped'
-                }
-            )
+            print("here1")
+            required_fields = ['info_hash', 'peer_id', 'ip_address',
+                               'port', 'uploaded', 'downloaded', 'left']
+            print("here1")
+            is_valid, error_message = validate_required_fields(
+                data, required_fields)
+            if is_valid == False:
+                return JsonResponse({'failure reason': str(error_message)}, status=401)
 
-            # IF CREATE FILE OR COMPLETE AND START SEEDING
+            print("here1")
+            info_hash = data.get('info_hash', None)
+            peer_id = data.get('peer_id', None)
+            ip_address = data.get('ip_address', None)
+            port = data.get('port', None)
+            uploaded = data.get('uploaded', None)
+            downloaded = data.get('downloaded', None)
+            left = data.get('left', None)
+            event = data.get('event', None)
+            compact = data.get('compact', 0)
+            trackerid = data.get('trackerid', instance_tracker.tracker_id)
+            print("here1")
+            try:  # WHATEEVER THE EVENT IS, UPDATE THE PEER
+                print("here1")
+                peer, created = Peer.objects.update_or_create(
+                    peer_id=peer_id,
+                    defaults={
+                        'ip_address': ip_address,
+                        'port': port,
+                        'last_seen': datetime.now(),
+                        'is_active': event != 'stopped'
+                    }
+                )
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=400)
+
+            response_data = {}
+            # CREATE FILE OR SEEDING
             if event == "completed" or (left == 0 and downloaded >= 0):
-                try:
+
+                try:  # AFTER THIS THE FILE IS GUARANTEED TO EXIST
                     file = File.objects.get(hash_code=info_hash)
-                    peerfile, created = PeerFile.objects.update_or_create(
-                        peer=peer,
-                        file=File.objects.get(hash_code=info_hash),
-                        peer_type='seeder'
-                    )
                 except File.DoesNotExist:
-                    File.objects.create(
+                    file = File.objects.create(
                         hash_code=info_hash)
 
+                try:
                     peerfile, created = PeerFile.objects.update_or_create(
                         peer=peer,
-                        file=File.objects.get(hash_code=info_hash),
+                        file=file,
                         peer_type='seeder'
                     )
+                except Exception as e:
+                    return JsonResponse({'failure reason': str(e)}, status=400)
 
-            # # IF EVENT IS STARTED AND LEFT IS NOT 0 THEN ADD TO LEECHER
-            # elif event == "started" and left > 0:
-            #     try:
-            #         file = File.objects.get(hash_code=info_hash)
-            #         peerfile, created = PeerFile.objects.update_or_create(
-            #             peer=peer,
-            #             file=File.objects.get(hash_code=info_hash),
-            #             peer_type='leecher'
-            #         )
-            #     except File.DoesNotExist:
-            #         File.objects.create(
-            #             hash_code=info_hash)
+                # peers_ids = PeerFile.objects.filter(file=file).values_list(
+                #     'peer_id', flat=True)
+                # peers_list = Peer.objects.filter(
+                #     peer_id__in=peers_ids).exclude(peer_id=peer_id)
 
-            #         peerfile, created = PeerFile.objects.update_or_create(
-            #             peer=peer,
-            #             file=File.objects.get(hash_code=info_hash),
-            #             peer_type='leecher'
-            #         )
+                peers_list = Peer.objects.filter(
+                    peerfile__file=file).exclude(peer_id=peer_id)
 
-            # IF FILE THEN RETURN IF NOT THEN SEARCH FILES IN OTHER TRACKERS
-            try:
-                file = File.objects.get(hash_code=info_hash)
-                # print("here")
-                # print(file)
-                # return JsonResponse(FileSerializer(file).data)
-                if event == "started" and left > 0 and downloaded > 0:
-                    peerfile, created = PeerFile.objects.update_or_create(
-                        peer=peer,
-                        file=File.objects.get(hash_code=info_hash),
-                        peer_type='leecher'
-                    )
-                peers_ids = PeerFile.objects.filter(file=file).values_list(
-                    'peer_id', flat=True)
-                peers_list = Peer.objects.filter(peer_id__in=peers_ids)
-                # print(peers_list)
-                peer_serializer = PeerSerializer(peers_list, many=True).data
+                peers_serialized = PeerSerializer(
+                    peers_list, many=True).data
+
                 response_data = {
                     'interval': 1800,
                     'complete': PeerFile.objects.filter(file=file, peer_type='seeder').count(),
                     'incomplete': PeerFile.objects.filter(file=file, peer_type='leecher').count(),
-                    'peers': peer_serializer
+                    'peers': peers_serialized
                 }
-                # print(peer_serializer)
-                # return JsonResponse(peer_serializer, status=200, safe=False)
-            except File.DoesNotExist:
-                query_response = query_other_trackers_for_peers(info_hash)
-                if query_response == None:
+
+            # PEER STOPPED
+            elif event == "stopped":
+                try:
+                    # Mark the peer as inactive
+                    peer.is_active = False
+                    peer.last_seen = datetime.now()
+                    peer.save()
+
+                    # Remove the PeerFile entry
+                    PeerFile.objects.filter(
+                        peer=peer, file__hash_code=info_hash).delete()
+
+                    peers_list = Peer.objects.filter(
+                        peerfile__file=file).exclude(peer_id=peer_id)
+
+                    peers_serialized = PeerSerializer(
+                        peers_list, many=True).data
+
                     response_data = {
-                        'failure reason': 'File not found in any tracker'
-                    }
-                else:
-                    peers_list = query_response['peers']
-                    trackerid = query_response['trackerid']
-                    response_data = {
-                        'trackerid': trackerid,
                         'interval': 1800,
                         'complete': PeerFile.objects.filter(file=file, peer_type='seeder').count(),
                         'incomplete': PeerFile.objects.filter(file=file, peer_type='leecher').count(),
-                        'peers': peers_list
+                        'peers': peers_serialized
                     }
 
-            return JsonResponse(response_data, status=200)
-        except KeyError:
-            return JsonResponse({'error': 'Invalid request'}, status=400)
+                except Exception as e:
+                    return JsonResponse({'failure reason': f'Failed to handle stopped event: {str(e)}'}, status=500)
+
+            # DOWNLOAD AND LEECH
+            else:
+                try:
+                    file = File.objects.get(hash_code=info_hash)
+
+                    if event == 'started' or (downloaded > 0 and left > 0):
+                        try:
+                            peerfile, created = PeerFile.objects.update_or_create(
+                                peer=peer,
+                                file=File.objects.get(hash_code=info_hash),
+                                peer_type='leecher'
+                            )
+                        except Exception as e:
+                            return JsonResponse({'failure reason': str(e)}, status=400)
+
+                    peers_list = Peer.objects.filter(
+                        peerfile__file=file).exclude(peer_id=peer_id)
+
+                    peers_serialized = PeerSerializer(
+                        peers_list, many=True).data
+                    response_data = {
+                        'interval': 1800,
+                        'complete': PeerFile.objects.filter(file=file, peer_type='seeder').count(),
+                        'incomplete': PeerFile.objects.filter(file=file, peer_type='leecher').count(),
+                        'peers': peers_serialized
+                    }
+                except File.DoesNotExist:
+                    query_response = query_other_trackers_for_peers(info_hash)
+                    if query_response == None:
+                        response_data = {
+                            'failure reason': 'File not found in any trackers'
+                        }
+                    else:
+                        peers_list = query_response['peers']
+                        trackerid = query_response['trackerid']
+                        response_data = {
+                            'trackerid': trackerid,
+                            'interval': 1800,
+                            'complete': PeerFile.objects.filter(file=file, peer_type='seeder').count(),
+                            'incomplete': PeerFile.objects.filter(file=file, peer_type='leecher').count(),
+                            'peers': peers_list
+                        }
+
+                return JsonResponse(response_data, status=200)
+        except Exception as e:
+            return JsonResponse({'failure reason': str(e)}, status=402)
+
+
+@csrf_exempt
+def query_other_trackers_for_peers(info_hash):
+    other_trackers = [
+        "http://127.0.0.1:8080/getfile"
+    ]
+
+    for tracker_url in other_trackers:
+        try:
+            response = requests.get(tracker_url, params={
+                                    'info_hash': info_hash})
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            print(f"Failed to query tracker {tracker_url}: {str(e)}")
+            # response_data = {
+            #     'trackerid': instance_tracker.tracker_id,
+            #     'peers': peer_serializer
+            # }
+    return None
 
 
 def getFile(request, info_hash):
     if request.method == 'GET':
         try:
             file = File.objects.get(hash_code=info_hash)
-            # print("here")
-            # print(file)
-            # return JsonResponse(FileSerializer(file).data)
             peers_ids = PeerFile.objects.filter(file=file).values_list(
                 'peer_id', flat=True)
             peers_list = Peer.objects.filter(peer_id__in=peers_ids)
@@ -184,6 +227,7 @@ def getFile(request, info_hash):
                 'trackerid': instance_tracker.tracker_id,
                 'peers': peer_serializer
             }
+            return JsonResponse(response_data, status=200)
         except File.DoesNotExist:
             return JsonResponse({'error': 'File not found'}, status=404)
 

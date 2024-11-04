@@ -9,8 +9,12 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+from dotenv import load_dotenv
 from pathlib import Path
+import os
+
+load_dotenv()
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -77,7 +81,7 @@ WSGI_APPLICATION = 'trackers.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'test_torrent',  # Replace with your MySQL database name
+        'NAME': 'torrent',  # Replace with your MySQL database name
         'USER': 'root',  # Replace with your MySQL user
         'PASSWORD': 'admin',  # Replace with your MySQL password
         'HOST': 'localhost',  # Set to your MySQL host
