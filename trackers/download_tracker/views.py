@@ -17,7 +17,7 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
-ISLOGINREQUIRED = os.environ.get('ISLOGINREQUIRED', 0)
+ISLOGINREQUIRED = os.environ.get('ISLOGINREQUIRED', 1)
 print(f"Is login required: {ISLOGINREQUIRED}")
 TRACKERID = os.environ.get('TRACKERID')
 print(f"Tracker ID: {TRACKERID}")
