@@ -33,5 +33,5 @@ RUN python manage.py makemigrations download_tracker
 
 RUN python manage.py migrate
 
-
-CMD ["python", "manage.py", "runserver", "0.0.0.0:${SERVER_PORT}"]
+# NHO SỬA CÁI PORT CHỖ NÀY
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8081"]

@@ -34,6 +34,7 @@ print(f"Tracker ID: {TRACKERID}")
 #     )
 
 
+@csrf_exempt
 def testAPI(request):
     if request.method == 'GET':
         db_info = {
@@ -46,7 +47,10 @@ def testAPI(request):
 
         print(f"Database connection info: {db_info}")
         return JsonResponse({'message': 'API is working',
-                             'dbinfo': db_info}, status=200)
+                             'dbinfo': db_info,
+                             'trackerid': TRACKERID,
+                             'ISLOGINREQUIRED': ISLOGINREQUIRED},
+                            status=200)
 
 
 @csrf_exempt
@@ -143,8 +147,9 @@ def announce(request):
             response_data = {}
             print("here5.5")
             # CREATE FILE OR SEEDING
-            if event == "completed" or (left == 0 and downloaded >= 0):
+            if event == "completed" or (left == 0 and downloaded > 0):
                 print("here6")
+                print(event, left, downloaded)
 
                 try:  # AFTER THIS THE FILE IS GUARANTEED TO EXIST
                     file = File.objects.get(hash_code=info_hash)
@@ -238,7 +243,7 @@ def announce(request):
                     print("here7.5")
                     if query_response == None:
                         response_data = {
-                            'failure reason': 'File not found in this'
+                            'failure reason': 'File not found in this tracker'
                         }
                     else:
                         print("here7.6")
