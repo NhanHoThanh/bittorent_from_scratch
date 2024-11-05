@@ -1,35 +1,75 @@
-
-### event = completed, tạo file trong datbase vì chưa có file nào.
-POST http://localhost:8081/api/announce/
+###
+POST http://localhost:8000/api/signup/
 Content-Type: application/json
 
 {
-    "info_hash": "jdasdhsadhsakhasdsa",
-    "peer_id": "asdas",
-    "ip_address": "34.24.5.6", 
+    "username": "sssssc",
+    "password": "test"
+}
+###
+POST http://localhost:8000/api/login/
+Content-Type: application/json
+
+{
+    "username": "sssssc",
+    "password": "test"
+}
+
+###
+POST http://localhost:8000/api/test/
+
+### event = completed, tạo file trong datbase vì chưa có file nào.
+POST http://localhost:8000/api/announce/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzMwNzY0OTQzLCJpYXQiOjE3MzA3NjQ2NDMsImp0aSI6IjhjN2VhMDU4MDE3OTRmNmM4YzM3YzczZjdkZTIyYjE3IiwidXNlcl9pZCI6NH0.QFZzQJS8eM5f6pg345Vp4tSw_rUTa2i1VSWKzdInTmQ
+
+{
+    "info_hash": "onlyon8000",
+    "peer_id": "asssss", 
     "port": 6663,
     "uploaded": 0,
     "downloaded": 0,
     "left": 0,
     "event": "completed",
-    "compact": true,
+    "compact": "1"
     
 }
+
+### sau khi tạo thì có thể nhập đúng info_hash để lấy file
+POST http://localhost:8000/api/announce/
+Content-Type: application/json
+
+{
+    "info_hash": "onlyon8000",
+    "peer_id": "hgfdfgfdfgf",
+    "ip_address": "11.333.2333.555", 
+    "port": 6663,
+    "uploaded": 0,
+    "downloaded": 0,
+    "left": 1224,
+    "event": "started",
+    "compact": "0"
+}
+
+
+###
+GET http://localhost:8000/api/getfile/?info_hash=onlyon8000
+
+### test getfile
+GET http://localhost:8081/api/getfile/?info_hash=onlyon8081
 
 ### sau khi tạo thì có thể nhập đúng info_hash để lấy file
 POST http://localhost:8081/api/announce/
 Content-Type: application/json
 
 {
-    "info_hash": "jdasdhsadhsakhasdsa",
-    "peer_id": "test1",
-    "ip_address": "11.333.444.555", 
+    "info_hash": "onlyon8081",
+    "peer_id": "tester1212",
+    "ip_address": "11.522.47.38", 
     "port": 6663,
     "uploaded": 0,
     "downloaded": 1223,
     "left": 1224,
-    "event": "started",
+    "event": "completed",
     "compact": "0"
 }
-
-###

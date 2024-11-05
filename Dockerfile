@@ -2,12 +2,14 @@ FROM python:3.12.4-slim
 
 
 
-ENV TRACKERID=1
+ENV TRACKERID=1123
+ENV ISLOGINREQUIRED=1
 ENV DB_NAME=test_torrent
 ENV DB_USER=root
 ENV DB_PASSWORD=admin
 ENV DB_HOST=host.docker.internal
 ENV DB_PORT=3306
+ENV SERVER_PORT=8081
 
 WORKDIR /app
 
@@ -21,7 +23,7 @@ RUN pip install -r requirements.txt
 
 COPY . /app/
 
-EXPOSE 8081
+EXPOSE ${SERVER_PORT}
 
 RUN pwd
 
@@ -32,4 +34,4 @@ RUN python manage.py makemigrations download_tracker
 RUN python manage.py migrate
 
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8081"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:${SERVER_PORT}"]
