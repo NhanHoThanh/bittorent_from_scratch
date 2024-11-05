@@ -124,7 +124,7 @@ def announce(request):
             left = data.get('left', None)
             event = data.get('event', None)
             compact = data.get('compact', 0)
-            trackerid = data.get('trackerid', instance_tracker.tracker_id)
+            trackerid = data.get('trackerid', TRACKERID)
             print("here4")
             try:  # WHATEEVER THE EVENT IS, UPDATE THE PEER
                 print("here5")
@@ -292,7 +292,7 @@ def getFile(request):
             # print(peers_list)
             peer_serializer = PeerSerializer(peers_list, many=True).data
             response_data = {
-                'trackerid': instance_tracker.tracker_id,
+                'trackerid': TRACKERID,
                 'peers': peer_serializer,
                 'complete': PeerFile.objects.filter(file=file, peer_type='seeder').count(),
                 'incomplete': PeerFile.objects.filter(file=file, peer_type='leecher').count()
