@@ -21,17 +21,17 @@ ISLOGINREQUIRED = os.environ.get('ISLOGINREQUIRED', 1)
 print(f"Is login required: {ISLOGINREQUIRED}")
 TRACKERID = os.environ.get('TRACKERID')
 print(f"Tracker ID: {TRACKERID}")
-try:
-    instance_tracker = Tracker.objects.get(tracker_id=TRACKERID)
-except ObjectDoesNotExist:
-    print(f"Tracker with tracker_id {
-          TRACKERID} does not exist. Creating new tracker...")
-    instance_tracker = Tracker.objects.create(
-        tracker_id=TRACKERID,
-        ip_address="localhost",
-        port=8000,
-        status='active',
-    )
+# try:
+#     instance_tracker = Tracker.objects.get(tracker_id=TRACKERID)
+# except ObjectDoesNotExist:
+#     print(f"Tracker with tracker_id {
+#           TRACKERID} does not exist. Creating new tracker...")
+#     instance_tracker = Tracker.objects.create(
+#         tracker_id=TRACKERID,
+#         ip_address="localhost",
+#         port=8000,
+#         status='active',
+#     )
 
 
 def testAPI(request):
