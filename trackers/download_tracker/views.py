@@ -1,9 +1,13 @@
+from .models import File, Peer
+from django.shortcuts import get_object_or_404
 from .ultis.utils import authorize_peer, generate_jwt_token
 from django.db import connection
 from .ultis.utils import validate_required_fields
 from django.views.decorators.csrf import csrf_exempt
 from .serializer import PeerSerializer, FileSerializer, PeerFileSerializer
 import uuid
+import struct
+import socket
 import os
 from rest_framework.response import Response
 import requests
@@ -17,7 +21,7 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
-ISLOGINREQUIRED = os.environ.get('ISLOGINREQUIRED', 1)
+ISLOGINREQUIRED = os.environ.get('ISLOGINREQUIRED', 0)
 print(f"Is login required: {ISLOGINREQUIRED}")
 TRACKERID = os.environ.get('TRACKERID')
 print(f"Tracker ID: {TRACKERID}")
@@ -102,33 +106,34 @@ def login(request):
 
 @csrf_exempt
 def announce(request):
-    if request.method == 'POST':
+    if request.method == 'GET':
         try:
-            if ISLOGINREQUIRED == 1:
-                peer = authorize_peer(request)
+            # if ISLOGINREQUIRED == 1:
+            #     peer = authorize_peer(request)
 
-            data = json.loads(request.body)
+            # data = json.loads(request.body)
 
-            print("here1")
-            required_fields = ['info_hash', 'peer_id',
-                               'port', 'uploaded', 'downloaded', 'left']
-            print("here2")
-            is_valid, error_message = validate_required_fields(
-                data, required_fields)
-            if is_valid == False:
-                return JsonResponse({'failure reason for validating': str(error_message)}, status=401)
+            # print("here1")
+            # required_fields = ['info_hash', 'peer_id',
+            #                    'port', 'uploaded', 'downloaded', 'left']
+            # print("here2")
+            # is_valid, error_message = validate_required_fields(
+            #     data, required_fields)
+            # if is_valid == False:
+            #     return JsonResponse({'failure reason': str(error_message)}, status=401)
 
             print("here3")
-            info_hash = data.get('info_hash', None)
-            peer_id = data.get('peer_id', None)
-            ip_address = ip_address = request.META.get('REMOTE_ADDR')
-            port = data.get('port', None)
-            uploaded = data.get('uploaded', None)
-            downloaded = data.get('downloaded', None)
-            left = data.get('left', None)
-            event = data.get('event', None)
-            compact = data.get('compact', 0)
-            trackerid = data.get('trackerid', TRACKERID)
+            info_hash = request.GET.get('info_hash')
+            peer_id = request.GET.get('peer_id')
+            ip_address = request.META.get('REMOTE_ADDR')
+            port = request.GET.get('port')
+            uploaded = request.GET.get('uploaded')
+            downloaded = request.GET.get('downloaded')
+            left = request.GET.get('left')
+            event = request.GET.get('event')
+            compact = request.GET.get('compact')
+            print(compact)
+
             print("here4")
             try:  # WHATEEVER THE EVENT IS, UPDATE THE PEER
                 print("here5")
@@ -164,7 +169,7 @@ def announce(request):
                         peer_type='seeder'
                     )
                 except Exception as e:
-                    return JsonResponse({'failure reason for create file or seeding': str(e)}, status=400)
+                    return JsonResponse({'failure reason': str(e)}, status=400)
 
                 peers_list = Peer.objects.filter(
                     peerfile__file=file).exclude(peer_id=peer_id)
@@ -225,7 +230,7 @@ def announce(request):
                                 peer_type='leecher'
                             )
                         except Exception as e:
-                            return JsonResponse({'failure reason for download and leech': str(e)}, status=400)
+                            return JsonResponse({'failure reason': str(e)}, status=400)
                     print("here7")
                     peers_list = Peer.objects.filter(
                         peerfile__file=file).exclude(peer_id=peer_id)
@@ -259,17 +264,26 @@ def announce(request):
                             'peers': peers_list
                         }
             print("here8")
-            return JsonResponse(response_data, status=200)
+            print(compact)
+            if int(compact) == 1:
+                print("here9")
+                compact_peers = ''.join(
+                    f"{peer['ip_address']}:{peer['port']},"
+                    for peer in peers_serialized
+                ).strip(',')
+                response_data['peers'] = compact_peers
+
+                return JsonResponse(response_data, status=200)
+            else:
+                print("here10")
+                return JsonResponse(response_data, status=200)
         except Exception as e:
             return JsonResponse({'failure reason': str(e)}, status=402)
 
 
 @csrf_exempt
 def query_other_trackers_for_peers(info_hash):
-    return None
-    other_trackers = [
-
-    ]
+    other_trackers = []
 
     for tracker_url in other_trackers:
         try:
@@ -307,20 +321,31 @@ def getFile(request):
             return JsonResponse({'error': 'File not found'}, status=404)
 
 
-# def scrape(request):
-#     if request.method == 'GET':
-#         info_hash = request.GET.get('info_hash')
-#     file = get_object_or_404(File, hash_code=info_hash)
-#     peers = Peer.objects.filter(
-#         peerpiece__piece__file=file, is_active=True)
+def scrape(request):
+    if request.method == 'GET':
+        info_hashes = request.GET.getlist('info_hash')
+        print(info_hashes)
+        response_data = {'files': {}}
 
-#     response_data = {
-#         'files': {
-#             info_hash: {
-#                 'complete': peers.filter(peerpiece__piece__file=file, peerpiece__piece__file__size=0).count(),
-#                 'downloaded': peers.count(),
-#                 'incomplete': peers.filter(peerpiece__piece__file=file, peerpiece__piece__file__size__gt=0).count()
-#             }
-#         }
-#     }
-#     return JsonResponse(response_data)
+        for info_hash in info_hashes:
+            try:
+                file = File.objects.get(hash_code=info_hash)
+                peers_list = Peer.objects.filter(
+                    peerfile__file=file)
+                peers_serialized = PeerSerializer(
+                    peers_list, many=True).data
+
+                response_data['files'][info_hash] = {
+                    'complete': PeerFile.objects.filter(file=file, peer_type='seeder').count(),
+                    'downloaded': PeerFile.objects.filter(file=file).count(),
+                    'incomplete': PeerFile.objects.filter(file=file, peer_type='leecher').count(),
+                    'peers': peers_serialized
+                }
+            except File.DoesNotExist:
+                response_data['files'][info_hash] = {
+                    'failure reason': 'File not found'
+                }
+
+        return JsonResponse(response_data)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)

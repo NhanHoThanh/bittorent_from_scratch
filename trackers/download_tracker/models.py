@@ -1,5 +1,7 @@
 from django.db import models
 
+from django.contrib.auth.models import User
+
 
 class File(models.Model):
     file_id = models.AutoField(primary_key=True)
@@ -12,6 +14,8 @@ class Peer(models.Model):
     port = models.IntegerField()
     is_active = models.BooleanField(default=True)
     last_seen = models.DateTimeField(auto_now=True)
+    # user = models.ForeignKey(
+    #     User, on_delete=models.CASCADE, related_name='peers', null=True, blank=True)
 
 
 class PeerFile(models.Model):
@@ -19,17 +23,6 @@ class PeerFile(models.Model):
     file = models.ForeignKey(File, on_delete=models.CASCADE)
     peer_type = models.CharField(max_length=10, choices=[
                                  ("leecher", "seeder")])
-
-
-class PeerAuth(models.Model):
-    username = models.CharField(max_length=255)
-    password = models.CharField(max_length=255)
-    peer = models.ForeignKey(Peer, on_delete=models.CASCADE)
-    session_id = models.CharField(max_length=255)
-    status = models.CharField(max_length=10, choices=[(
-        'active', 'Active'), ('inactive', 'Inactive')])
-    login_time = models.DateTimeField(null=True, blank=True)
-    logout_time = models.DateTimeField(null=True, blank=True)
 
 
 class Tracker(models.Model):
