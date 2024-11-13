@@ -194,10 +194,6 @@ def announce(request):
                     peer.last_seen = datetime.now()
                     peer.save()
 
-                    # Remove the PeerFile entry
-                    PeerFile.objects.filter(
-                        peer=peer, file__hash_code=info_hash).delete()
-
                     peers_list = Peer.objects.filter(
                         peerfile__file=file).exclude(peer_id=peer_id)
 
@@ -210,6 +206,9 @@ def announce(request):
                         'incomplete': PeerFile.objects.filter(file=file, peer_type='leecher').count(),
                         'peers': peers_serialized
                     }
+
+                    PeerFile.objects.filter(
+                        peer=peer, file__hash_code=info_hash).delete()
 
                 except Exception as e:
                     return JsonResponse({'failure reason': f'Failed to handle stopped event: {str(e)}'}, status=500)
