@@ -19,7 +19,7 @@ Content-Type: application/json
 POST http://localhost:8000/api/test/
 
 ### event = completed, tạo file trong datbase vì chưa có file nào. LẤY CÁI ACCESS TOKEN GẮN VÔ ĐÂY
-GET http://localhost:8000/api/announce/?info_hash=onlyon8000&peer_id=peer01&port=6663&uploaded=0&downloaded=0&left=0&event=completed&compact=0
+GET http://localhost:8000/api/announce/?info_hash=sha21sedrsdbkfsd233434234&peer_id=peer01&port=6663&uploaded=100&downloaded=0&left=0&event=completed&compact=0
 Content-Type: application/json
 # Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzMwNzY0OTQzLCJpYXQiOjE3MzA3NjQ2NDMsImp0aSI6IjhjN2VhMDU4MDE3OTRmNmM4YzM3YzczZjdkZTIyYjE3IiwidXNlcl9pZCI6NH0.QFZzQJS8eM5f6pg345Vp4tSw_rUTa2i1VSWKzdInTmQ
 
@@ -33,3 +33,4 @@ Content-Type: application/json
 
 
 ### KHÔNG CÓ FILE->TRẢ VỀ FAILURE ERORR.            
+GET http://localhost:8000/api/announce/?info_hash=sha21sedrsdbkfsd233434234&peer_id=peer02&port=6663&uploaded=10&downloaded=1&left=0&event=completed&compact=0

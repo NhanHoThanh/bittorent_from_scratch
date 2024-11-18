@@ -163,10 +163,13 @@ def announce(request):
                         hash_code=info_hash)
 
                 try:
+                    print("event completed", left)
+                    peer_type = 'seeder' if int(left) == 0 else 'leecher'
+                    print("peer_type", peer_type)
                     peerfile, created = PeerFile.objects.update_or_create(
                         peer=peer,
                         file=file,
-                        peer_type='seeder'
+                        defaults={'peer_type': peer_type}
                     )
                 except Exception as e:
                     return JsonResponse({'failure reason': str(e)}, status=400)
@@ -280,14 +283,14 @@ def announce(request):
             return JsonResponse({'failure reason': str(e)}, status=402)
 
 
-@csrf_exempt
+@ csrf_exempt
 def query_other_trackers_for_peers(info_hash):
     other_trackers = []
 
     for tracker_url in other_trackers:
         try:
             response = requests.get(tracker_url, params={
-                                    'info_hash': info_hash})
+                'info_hash': info_hash})
             if response.status_code == 200:
                 return response.json()
         except Exception as e:
