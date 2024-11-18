@@ -33,4 +33,4 @@ Content-Type: application/json
 
 
 ### KHÔNG CÓ FILE->TRẢ VỀ FAILURE ERORR.            
-GET http://localhost:8000/api/announce/?info_hash=sha21sedrsdbkfsd233434234&peer_id=peer02&port=6663&uploaded=10&downloaded=1&left=0&event=completed&compact=0
+GET http://localhost:8000/api/announce?info_hash=8ef3e98f12a54a255ad599f6696f2352a5133d64&peer_id=10.0.7.122&port=8000&uploaded=0&downloaded=0&left=27579194&event=started

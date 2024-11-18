@@ -131,7 +131,7 @@ def announce(request):
             downloaded = request.GET.get('downloaded')
             left = request.GET.get('left')
             event = request.GET.get('event')
-            compact = request.GET.get('compact')
+            compact = request.GET.get('compact', 0)
             print(compact)
 
             print("here4")
@@ -164,7 +164,8 @@ def announce(request):
 
                 try:
                     print("event completed", left)
-                    peer_type = 'seeder' if int(left) == 0 else 'leecher'
+                    peer_type = 'seeder'
+                    # if int(left) == 0 else 'leecher'
                     print("peer_type", peer_type)
                     peerfile, created = PeerFile.objects.update_or_create(
                         peer=peer,
@@ -196,6 +197,8 @@ def announce(request):
                     peer.is_active = False
                     peer.last_seen = datetime.now()
                     peer.save()
+
+                    file = File.objects.get(hash_code=info_hash)
 
                     peers_list = Peer.objects.filter(
                         peerfile__file=file).exclude(peer_id=peer_id)
@@ -299,9 +302,10 @@ def query_other_trackers_for_peers(info_hash):
             #     'trackerid': instance_tracker.tracker_id,
             #     'peers': peer_serializer
             # }
-    return None
+    return Nonez
 
 
+@csrf_exempt
 def getFile(request):
     if request.method == 'GET':
         try:
@@ -323,6 +327,7 @@ def getFile(request):
             return JsonResponse({'error': 'File not found'}, status=404)
 
 
+@csrf_exempt
 def scrape(request):
     if request.method == 'GET':
         info_hashes = request.GET.getlist('info_hash')

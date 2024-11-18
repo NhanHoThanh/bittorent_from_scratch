@@ -24,6 +24,12 @@ class PeerFile(models.Model):
     peer_type = models.CharField(max_length=10, choices=[
                                  ("leecher", "seeder")])
 
+    class Meta:
+        unique_together = ('peer', 'file')
+
+    def __str__(self):
+        return f"{self.peer.peer_id} - {self.file.hash_code}"
+
 
 class Tracker(models.Model):
     tracker_id = models.AutoField(primary_key=True)
